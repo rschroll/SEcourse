@@ -1,0 +1,23 @@
+// triangle1.fe
+
+define facet attribute poisson_ratio real
+define facet attribute form_factors real[3]
+quantity elastic energy method linear_elastic global
+
+vertices
+1	0 0 0
+2	0 1 0
+3	0 0.5 1
+
+edges
+1	1 2
+2	2 3
+3	3 1
+
+faces
+1	1 2 3 form_factors {1 1 2}
+
+read
+
+set facet tension 0
+set facet poisson_ratio 1/3

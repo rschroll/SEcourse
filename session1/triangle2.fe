@@ -1,0 +1,70 @@
+// triangle2.fe
+
+// For resetting form_factors in refining
+define vertex attribute ref_coord real[3]
+define vertex attribute old_vid  integer
+define edge   attribute old_eid  integer
+
+define facet attribute poisson_ratio real
+define facet attribute form_factors real[3]
+quantity stretch energy method linear_elastic global
+
+vertices
+1	0 0 0 ref_coord {0 0 0}
+2	0 1 0 ref_coord {0 1 0}
+3	0 0.5 1 ref_coord {0 1 1}
+
+edges
+1	1 2
+2	2 3
+3	3 1
+
+faces
+1	1 2 3
+
+read
+
+set facet tension 0
+set facet poisson_ratio 1/3
+
+// Set form factors so initial shape is unstretched.
+set_form_factors := {
+  foreach facet ff do
+  { set ff.form_factors[1]
+          (ff.vertex[2].ref_coord[1] - ff.vertex[1].ref_coord[1])^2
+        + (ff.vertex[2].ref_coord[2] - ff.vertex[1].ref_coord[2])^2
+        + (ff.vertex[2].ref_coord[3] - ff.vertex[1].ref_coord[3])^2;
+    set ff.form_factors[2]
+          (ff.vertex[2].ref_coord[1] - ff.vertex[1].ref_coord[1])
+         *(ff.vertex[3].ref_coord[1] - ff.vertex[1].ref_coord[1])
+        + (ff.vertex[2].ref_coord[2] - ff.vertex[1].ref_coord[2])
+         *(ff.vertex[3].ref_coord[2] - ff.vertex[1].ref_coord[2])
+        + (ff.vertex[2].ref_coord[3] - ff.vertex[1].ref_coord[3])
+         *(ff.vertex[3].ref_coord[3] - ff.vertex[1].ref_coord[3]);
+    set ff.form_factors[3]
+          (ff.vertex[3].ref_coord[1] - ff.vertex[1].ref_coord[1])^2
+        + (ff.vertex[3].ref_coord[2] - ff.vertex[1].ref_coord[2])^2
+        + (ff.vertex[3].ref_coord[3] - ff.vertex[1].ref_coord[3])^2;
+  }
+}
+set_form_factors;
+
+// redefine the "r" command to adjust form factors.
+r :::= {
+     set vertex old_vid id;
+     set edge old_eid id;
+     'r';
+     foreach vertex vv where old_vid == 0 do
+     { vv.ref_coord[1] :=
+          avg(vv.edge ee where old_eid != 0,sum(ee.vertex where old_vid != 0,
+                    ref_coord[1]));
+       vv.ref_coord[2] :=
+          avg(vv.edge ee where old_eid != 0,sum(ee.vertex where old_vid != 0,
+                    ref_coord[2]));
+       vv.ref_coord[3] :=
+          avg(vv.edge ee where old_eid != 0,sum(ee.vertex where old_vid != 0,
+                    ref_coord[3]));
+     };
+     set_form_factors;
+     recalc;
+}

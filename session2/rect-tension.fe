@@ -1,0 +1,45 @@
+// triangle2.fe
+
+PARAMETER rt = sqrt(3)
+
+// For resetting form_factors in refining
+define vertex attribute ref_coord real[3]
+define vertex attribute old_vid  integer
+define edge   attribute old_eid  integer
+
+define facet attribute poisson_ratio real
+define facet attribute form_factors real[3]
+quantity stretch energy method linear_elastic global
+
+define edge   attribute tension_mark   integer
+define vertex attribute tension_length real
+quantity apptension energy method vertex_scalar_integral
+    scalar_integrand: -x * tension_length
+
+vertices
+1    0   0        0   ref_coord {0   0    0} fixed
+2    0   rt/2     0   ref_coord {0   rt/2 0} fixed
+3    1/2 rt/2     0   ref_coord {1/2 rt/2 0}
+4    1   0        0   ref_coord {1   0    0} apptension
+5    1   rt/2     0   ref_coord {1   rt/2 0} apptension
+
+edges
+1    1 2 fixed
+2    1 3
+3    1 4
+4    2 3
+5    3 5
+6    3 4
+7    4 5 tension_mark 1
+
+faces
+1    1  4 -2
+2    2  6 -3
+3    5 -7 -6
+
+read
+
+set facet tension 0
+set facet poisson_ratio 1/3
+
+read "refinement-tension.cmd"
